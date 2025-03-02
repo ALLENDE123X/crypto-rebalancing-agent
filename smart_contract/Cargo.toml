@@ -1,0 +1,13 @@
+[package]
+name = "smart_contract"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+near-sdk = "4.1.1"
+
+[lib]
+crate-type = ["cdylib"]
+
+[patch.crates-io]
+parity-secp256k1 = { git = "https://github.com/paritytech/rust-secp256k1.git" }

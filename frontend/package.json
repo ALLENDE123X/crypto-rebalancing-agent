@@ -1,0 +1,32 @@
+{
+  "name": "crypto-rebalancing-agent-ui",
+  "version": "1.0.0",
+  "description": "Frontend for AI-Powered Crypto Rebalancing Agent on NEAR",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "keywords": ["near", "blockchain", "crypto", "ai", "trading", "dashboard"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@headlessui/react": "^1.7.17",
+    "@heroicons/react": "^2.0.18",
+    "@near-wallet-selector/core": "^8.10.0",
+    "@near-wallet-selector/modal-ui": "^8.10.0",
+    "@near-wallet-selector/near-wallet": "^8.9.3",
+    "autoprefixer": "^10.4.16",
+    "axios": "^1.6.2",
+    "chart.js": "^4.4.0",
+    "near-api-js": "^2.1.4",
+    "next": "^14.0.3",
+    "postcss": "^8.4.31",
+    "react": "^18.2.0",
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "^18.2.0",
+    "tailwindcss": "^3.3.5"
+  }
+}

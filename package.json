@@ -1,0 +1,16 @@
+{
+  "name": "crypto-rebalancing-agent",
+  "version": "1.0.0",
+  "description": "A smart contract-based agent for automated cryptocurrency rebalancing based on sentiment analysis.",
+  "main": "near_client.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "near-api-js": "^5.0.1"
+  }
+}
