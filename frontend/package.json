@@ -15,9 +15,9 @@
   "dependencies": {
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
-    "@near-wallet-selector/core": "^8.10.0",
-    "@near-wallet-selector/modal-ui": "^8.10.0",
-    "@near-wallet-selector/near-wallet": "^8.9.3",
+    "@near-wallet-selector/core": "^8.5.3",
+    "@near-wallet-selector/modal-ui": "^8.5.3",
+    "@near-wallet-selector/near-wallet": "^8.5.3",
     "autoprefixer": "^10.4.16",
     "axios": "^1.6.2",
     "chart.js": "^4.4.0",
