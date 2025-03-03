@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -23,6 +23,17 @@ ChartJS.register(
 );
 
 export function SentimentChart({ data, title = 'Sentiment Trend' }) {
+  const chartRef = useRef(null);
+
+  // If data is empty or undefined, render a placeholder
+  if (!data || data.length === 0) {
+    return (
+      <div className="card flex items-center justify-center h-64">
+        <p className="text-gray-500">No sentiment data available</p>
+      </div>
+    );
+  }
+  
   // Format data for Chart.js
   const chartData = {
     labels: data.map(item => item.date),
@@ -42,6 +53,7 @@ export function SentimentChart({ data, title = 'Sentiment Trend' }) {
   // Chart options
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top',
@@ -82,7 +94,9 @@ export function SentimentChart({ data, title = 'Sentiment Trend' }) {
 
   return (
     <div className="card">
-      <Line data={chartData} options={options} />
+      <div className="h-64">
+        <Line ref={chartRef} data={chartData} options={options} />
+      </div>
     </div>
   );
 } 

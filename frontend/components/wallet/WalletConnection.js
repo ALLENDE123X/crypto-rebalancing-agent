@@ -1,8 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNear } from '../../lib/near/NearContext';
+import { WalletModal } from './WalletModal';
 
 export function WalletConnection() {
-  const { isSignedIn, signIn, signOut, getAccountId, loading } = useNear();
+  const { isSignedIn, signIn, signOut, useDemoAccount, getAccountId, loading, usingDemoAccount } = useNear();
+  const [showOptions, setShowOptions] = useState(false);
+  const [showFallbackModal, setShowFallbackModal] = useState(false);
+  const [modalAttempted, setModalAttempted] = useState(false);
+
+  // Check if the NEAR modal fails to open and show fallback
+  useEffect(() => {
+    if (modalAttempted) {
+      // Set a timeout to check if the NEAR modal element exists and is visible
+      const checkModalTimeout = setTimeout(() => {
+        const nearModalElement = document.querySelector('.nws-modal-wrapper');
+        if (!nearModalElement || nearModalElement.style.display === 'none') {
+          console.log('NEAR modal not detected, showing fallback');
+          setShowFallbackModal(true);
+        }
+        setModalAttempted(false);
+      }, 1000); // Give the NEAR modal a second to appear
+      
+      return () => clearTimeout(checkModalTimeout);
+    }
+  }, [modalAttempted]);
 
   if (loading) {
     return (
@@ -20,7 +41,14 @@ export function WalletConnection() {
     return (
       <div className="flex items-center space-x-2">
         <span className="hidden md:inline text-sm text-gray-600">
-          {getAccountId()}
+          {usingDemoAccount ? (
+            <span className="flex items-center">
+              <span className="inline-block w-2 h-2 rounded-full bg-yellow-400 mr-1.5"></span>
+              {getAccountId()} (Demo)
+            </span>
+          ) : (
+            getAccountId()
+          )}
         </span>
         <button
           onClick={signOut}
@@ -32,12 +60,61 @@ export function WalletConnection() {
     );
   }
 
+  const handleConnectWallet = () => {
+    try {
+      signIn();
+      setModalAttempted(true);
+    } catch (error) {
+      console.error("Error opening wallet modal:", error);
+      setShowFallbackModal(true);
+    }
+  };
+
+  if (showOptions) {
+    return (
+      <div className="flex flex-col sm:flex-row gap-2">
+        <button 
+          onClick={() => {
+            handleConnectWallet();
+            setShowOptions(false);
+          }}
+          className="btn-primary text-sm"
+        >
+          Connect Your Wallet
+        </button>
+        <button 
+          onClick={() => {
+            useDemoAccount();
+            setShowOptions(false);
+          }}
+          className="btn-secondary text-sm"
+        >
+          Use Demo Wallet
+        </button>
+        <button 
+          onClick={() => setShowOptions(false)}
+          className="text-sm text-gray-500 hover:text-gray-700"
+        >
+          Cancel
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <button
-      onClick={signIn}
-      className="btn-primary"
-    >
-      Connect Wallet
-    </button>
+    <>
+      <button
+        onClick={() => setShowOptions(true)}
+        className="btn-primary"
+      >
+        Connect Wallet
+      </button>
+      
+      {/* Fallback modal if NEAR wallet selector fails */}
+      <WalletModal 
+        isOpen={showFallbackModal} 
+        onClose={() => setShowFallbackModal(false)} 
+      />
+    </>
   );
 } 

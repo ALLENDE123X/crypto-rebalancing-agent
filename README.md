@@ -1,109 +1,203 @@
-# AI-Powered Cryptocurrency Portfolio Rebalancing Agent
+# Crypto Rebalancing Agent
 
-An autonomous trading agent on the NEAR blockchain that uses sentiment analysis with Google Gemini AI to make data-driven cryptocurrency trading decisions.
+An AI-powered cryptocurrency trading application that analyzes sentiment data to automatically rebalance your portfolio. The application consists of:
 
-## Features
+1. A Next.js frontend dashboard for visualizing sentiment data and portfolio performance
+2. A Python sentiment analysis engine that analyzes crypto trends
+3. NEAR blockchain integration for executing trades and storing sentiment data
 
-- **AI-Powered Sentiment Analysis**: Uses Twitter data and Google Gemini AI to analyze market sentiment
-- **Automated Portfolio Rebalancing**: Dynamically adjusts crypto allocations based on sentiment scores
-- **NEAR Blockchain Integration**: Executes trades through secure smart contracts
-- **Interactive Dashboard**: Visualize sentiment trends, portfolio allocation, and trade history
-- **Reinforcement Learning**: Uses RL to improve trading strategies over time
+## Project Overview
+
+The Crypto Rebalancing Agent is designed to:
+
+1. Analyze sentiment around cryptocurrencies (BTC, ETH, NEAR, SOL, etc.)
+2. Make automated portfolio rebalancing decisions based on sentiment analysis
+3. Execute trades through the user's NEAR wallet via smart contracts
+4. Provide a dashboard that visualizes sentiment data, trade history, and portfolio allocation
+
+## Architecture
+
+This project uses a serverless architecture for cost-effectiveness:
+
+- **Frontend**: Next.js application deployed on Vercel
+- **Backend**: Serverless Python function deployed on AWS Lambda
+- **Database**: AWS DynamoDB for storing sentiment data and trade history
+- **Blockchain**: NEAR Protocol for executing trades and permanently storing sentiment data
+
+## Setup Instructions
+
+### Prerequisites
+
+- Node.js 16+ and npm
+- Python 3.8+
+- AWS Account (free tier eligible)
+- NEAR Wallet (testnet account for development)
+
+### Local Development
+
+#### 1. Frontend Setup
+
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Create environment file
+cp .env.example .env.local
+
+# Edit .env.local with your configuration
+# For local development, leave NEXT_PUBLIC_LAMBDA_API_URL commented out
+```
+
+#### 2. Python Sentiment Analysis Setup
+
+```bash
+# Navigate to sentiment-analysis directory
+cd sentiment-analysis
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install boto3
+
+# If testing locally with DynamoDB Local:
+pip install boto3[ddb-local]
+```
+
+### AWS Lambda Deployment
+
+Follow the instructions in `sentiment-analysis/aws-lambda-deployment.md` for detailed steps on deploying the sentiment analysis engine to AWS Lambda.
+
+#### Quick Summary:
+
+1. Create DynamoDB tables for sentiment data, trades, and portfolio
+2. Create an IAM role with DynamoDB and Lambda execution permissions
+3. Package the Python code and dependencies
+4. Create a Lambda function and upload the package
+5. Configure API Gateway to expose endpoints
+6. Set up CloudWatch Events for scheduled execution
+
+### Connecting Frontend to Lambda
+
+1. Get your API Gateway URL from the AWS Console
+2. Update your frontend `.env.local` file:
+
+```
+NEXT_PUBLIC_LAMBDA_API_URL=https://your-api-gateway-id.execute-api.us-east-1.amazonaws.com/prod
+```
+
+3. Deploy your frontend to Vercel or your preferred hosting service
 
 ## Project Structure
 
-- `frontend/`: Next.js web application
-- `smart_contract/`: NEAR blockchain smart contracts
-- `sentiment_analysis/`: Scripts for analyzing sentiment data
-- `reinforcement_learning/`: ML models for optimizing trading strategies
-
-## Quick Start
-
-### Option 1: Using the Public Deployment
-
-Visit our public deployment at [https://crypto-rebalancer.example.com](https://crypto-rebalancer.example.com) to use the application with our API keys.
-
-### Option 2: Run Your Own Instance
-
-#### Prerequisites
-
-- Node.js (v16+)
-- NEAR account and wallet
-- Twitter Developer API keys
-- Google Cloud API key (for Gemini AI)
-- CoinGecko API key
-
-#### Installation
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/crypto-rebalancing-agent.git
-   cd crypto-rebalancing-agent
-   ```
-
-2. Set up the frontend:
-   ```bash
-   cd frontend
-   npm install
-   cp .env.example .env.local
-   ```
-
-3. Edit `.env.local` to add your own API keys
-
-4. Run the development server:
-   ```bash
-   npm run dev
-   ```
-
-5. Visit `http://localhost:3000` in your browser
-
-## Deployment
-
-### Deploying to Vercel
-
-The simplest way to deploy this application is with Vercel:
-
-1. Push your code to a GitHub repository
-2. Sign up for a [Vercel account](https://vercel.com)
-3. Import the repository in Vercel
-4. Add your environment variables in the Vercel project settings
-5. Deploy!
-
-### Alternative Deployment Options
-
-#### Self-hosted Server
-
-1. Build the application:
-   ```bash
-   cd frontend
-   npm run build
-   ```
-
-2. Start the production server:
-   ```bash
-   npm start
-   ```
-
-#### Docker Deployment
-
-A Dockerfile is provided for containerized deployment:
-
-```bash
-docker build -t crypto-rebalancer .
-docker run -p 3000:3000 --env-file .env crypto-rebalancer
+```
+crypto-rebalancing-agent/
+├── frontend/                 # Next.js frontend application
+│   ├── components/           # React components
+│   ├── lib/                  # Utility functions
+│   ├── pages/                # Next.js pages
+│   └── public/               # Static assets
+├── sentiment-analysis/       # Python sentiment analysis engine
+│   ├── crypto_sentiment_agent.py  # Main sentiment analysis script
+│   └── aws-lambda-deployment.md   # AWS Lambda deployment guide
+└── smart-contract/           # NEAR Protocol smart contract
 ```
 
-## Security Notes
+## Running the Project
 
-- Never commit your `.env.local` file to version control
-- API keys are handled server-side in Next.js API routes
-- For production, use proper secrets management
-- Consider using environment variables through your deployment platform
+### Development Mode
 
-## Contributing
+```bash
+# Start the frontend
+cd frontend
+npm run dev
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+# The frontend will be available at http://localhost:3000
+```
 
-## License
+### Production Mode
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+1. Deploy the sentiment analysis engine to AWS Lambda
+2. Deploy the frontend to Vercel or similar hosting
+3. Connect your NEAR wallet to the application
+4. Configure your target allocation and sentiment thresholds
+
+## Cost Management
+
+The setup is designed to minimize costs:
+- AWS Lambda free tier includes 1M requests/month
+- DynamoDB free tier includes 25GB storage and 25 read/write capacity units
+- Scheduled sentiment analysis runs once per day
+- All components run within the AWS free tier for normal usage
+
+## Future Improvements
+
+- Implement real Twitter API integration
+- Add more data sources for sentiment analysis (Reddit, news articles)
+- Expand cryptocurrency coverage
+- Implement actual reinforcement learning for trading strategies
+- Deploy to NEAR mainnet for real trading
+
+## Contract Deployment Instructions
+
+To deploy the smart contract to the NEAR testnet, follow these steps:
+
+### Option 1: Deploy via NEAR Wallet (Recommended for Hackathon)
+
+1. Build the contract:
+   ```
+   cd smart_contract
+   cargo build --target wasm32-unknown-unknown --release
+   ```
+
+2. Go to [NEAR Wallet](https://wallet.testnet.near.org/)
+
+3. Login to your testnet account or create a new one
+
+4. Go to the "Deploy Contract" section in your wallet
+
+5. Upload the compiled WASM file from:
+   ```
+   smart_contract/target/wasm32-unknown-unknown/release/smart_contract.wasm
+   ```
+
+6. After deployment, update the contract ID in the frontend configuration:
+   ```
+   # In frontend/.env.local
+   NEXT_PUBLIC_NEAR_CONTRACT_ID=your-account.testnet
+   NEXT_PUBLIC_NEAR_NETWORK=testnet
+   ```
+
+7. Also update the contract ID in `frontend/lib/near/NearContext.js`:
+   ```js
+   const CONTRACT_ID = 'your-account.testnet';
+   ```
+
+### Option 2: Deploy via NEAR CLI
+
+If you have NEAR CLI set up with proper authentication, you can use:
+
+```bash
+# Login to NEAR testnet
+near login
+
+# Deploy the contract
+near deploy --wasmFile ./smart_contract/target/wasm32-unknown-unknown/release/smart_contract.wasm --accountId your-account.testnet
+
+# Initialize the contract if needed
+near call your-account.testnet new '{}' --accountId your-account.testnet
+```
+
+## Testing Contract Methods
+
+You can use the provided test script to verify the contract works:
+
+```bash
+node test-contract.js
+```
+
+This will try to call view methods on the contract and check if it's properly deployed.

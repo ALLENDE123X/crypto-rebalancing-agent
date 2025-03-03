@@ -10,15 +10,22 @@
     "lint": "next lint",
     "vercel-build": "npm install --legacy-peer-deps && npm run build"
   },
-  "keywords": ["near", "blockchain", "crypto", "ai", "trading", "dashboard"],
+  "keywords": [
+    "near",
+    "blockchain",
+    "crypto",
+    "ai",
+    "trading",
+    "dashboard"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
-    "@near-wallet-selector/core": "^8.5.3",
-    "@near-wallet-selector/modal-ui": "^8.5.3",
-    "@near-wallet-selector/near-wallet": "^8.5.3",
+    "@near-wallet-selector/core": "^8.9.2",
+    "@near-wallet-selector/modal-ui": "^8.9.2",
+    "@near-wallet-selector/near-wallet": "^8.9.2",
     "autoprefixer": "^10.4.16",
     "axios": "^1.6.2",
     "chart.js": "^4.4.0",
@@ -29,5 +36,9 @@
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.2.0",
     "tailwindcss": "^3.3.5"
+  },
+  "devDependencies": {
+    "eslint": "^8.54.0",
+    "eslint-config-next": "^14.0.3"
   }
 }

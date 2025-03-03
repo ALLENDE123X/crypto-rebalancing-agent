@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -36,14 +36,55 @@ const generateColors = (count) => {
   return baseColors.slice(0, count);
 };
 
-export function PortfolioAllocation({ allocations, title = 'Portfolio Allocation' }) {
-  const colors = generateColors(allocations.length);
+export function PortfolioAllocation({ allocations = [], title = 'Portfolio Allocation' }) {
+  const chartRef = useRef(null);
+  
+  // Ensure allocations is an array
+  const allocationArray = Array.isArray(allocations) ? allocations : 
+    (allocations && typeof allocations === 'object' && allocations.assets ? 
+      allocations.assets : 
+      [
+        { asset: 'BTC', percentage: 40 },
+        { asset: 'ETH', percentage: 30 },
+        { asset: 'NEAR', percentage: 20 },
+        { asset: 'SOL', percentage: 10 }
+      ]
+    );
+  
+  // If allocations is empty or undefined, render a placeholder
+  if (!allocationArray || allocationArray.length === 0) {
+    return (
+      <div className="card flex items-center justify-center h-64">
+        <p className="text-gray-500">No portfolio data available</p>
+      </div>
+    );
+  }
+  
+  const colors = generateColors(allocationArray.length);
+  
+  // Ensure we have proper labels
+  const labels = allocationArray.map(item => {
+    if (!item || typeof item !== 'object') return 'Unknown';
+    if (typeof item.asset === 'string') return item.asset;
+    if (item.crypto) return item.crypto;
+    if (item.symbol) return item.symbol;
+    return 'Unknown';
+  });
+  
+  // Ensure we have proper percentage values
+  const percentages = allocationArray.map(item => {
+    if (!item || typeof item !== 'object') return 0;
+    if (typeof item.percentage === 'number') return item.percentage;
+    if (typeof item.value === 'number') return item.value;
+    if (typeof item.amount === 'number') return item.amount;
+    return 0;
+  });
   
   const data = {
-    labels: allocations.map(item => item.asset),
+    labels: labels,
     datasets: [
       {
-        data: allocations.map(item => item.percentage),
+        data: percentages,
         backgroundColor: colors,
         borderColor: colors.map(color => color.replace('0.8', '1')),
         borderWidth: 1,
@@ -53,9 +94,28 @@ export function PortfolioAllocation({ allocations, title = 'Portfolio Allocation
   
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'right',
+        labels: {
+          generateLabels: (chart) => {
+            const datasets = chart.data.datasets;
+            return chart.data.labels.map((label, i) => {
+              const meta = chart.getDatasetMeta(0);
+              const style = meta.controller.getStyle(i);
+              
+              return {
+                text: `${label}: ${datasets[0].data[i].toFixed(1)}%`,
+                fillStyle: style.backgroundColor,
+                strokeStyle: style.borderColor,
+                lineWidth: style.borderWidth,
+                hidden: !chart.getDataVisibility(i),
+                index: i
+              };
+            });
+          }
+        }
       },
       title: {
         display: true,
@@ -65,7 +125,7 @@ export function PortfolioAllocation({ allocations, title = 'Portfolio Allocation
         callbacks: {
           label: (context) => {
             const value = context.raw;
-            return `${context.label}: ${value.toFixed(2)}%`;
+            return `${context.label}: ${value.toFixed(1)}%`;
           },
         },
       },
@@ -74,7 +134,9 @@ export function PortfolioAllocation({ allocations, title = 'Portfolio Allocation
   
   return (
     <div className="card">
-      <Pie data={data} options={options} />
+      <div className="h-64">
+        <Pie ref={chartRef} data={data} options={options} />
+      </div>
     </div>
   );
 } 

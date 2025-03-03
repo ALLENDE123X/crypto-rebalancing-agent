@@ -5,22 +5,20 @@ import {
   Bars3Icon, 
   XMarkIcon, 
   ChartPieIcon, 
-  ArrowPathIcon, 
-  PresentationChartLineIcon,
-  CogIcon 
+  PresentationChartLineIcon
 } from '@heroicons/react/24/outline';
 import { WalletConnection } from '../wallet/WalletConnection';
+import { useNear } from '../../lib/near/NearContext';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: ChartPieIcon },
   { name: 'Sentiment Analysis', href: '/sentiment', icon: PresentationChartLineIcon },
-  { name: 'Trade History', href: '/trades', icon: ArrowPathIcon },
-  { name: 'Settings', href: '/settings', icon: CogIcon },
 ];
 
 export function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const router = useRouter();
+  const { isSignedIn, getAccountId, usingDemoAccount } = useNear();
 
   const isActive = (href) => router.pathname === href;
 
@@ -69,7 +67,16 @@ export function Layout({ children }) {
             </nav>
           </div>
           
-          <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
+          <div className="flex-shrink-0 flex flex-col border-t border-gray-200 p-4">
+            {isSignedIn && (
+              <div className="mb-2 flex items-center">
+                <div className={`w-2 h-2 rounded-full ${usingDemoAccount ? 'bg-yellow-400' : 'bg-green-500'} mr-2`}></div>
+                <span className="text-sm text-gray-600 truncate">
+                  {getAccountId()}
+                  {usingDemoAccount && <span className="ml-1 text-xs text-yellow-600">(Demo)</span>}
+                </span>
+              </div>
+            )}
             <WalletConnection />
           </div>
         </div>
@@ -104,7 +111,16 @@ export function Layout({ children }) {
               ))}
             </nav>
           </div>
-          <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
+          <div className="flex-shrink-0 flex flex-col border-t border-gray-200 p-4">
+            {isSignedIn && (
+              <div className="mb-2 flex items-center">
+                <div className={`w-2 h-2 rounded-full ${usingDemoAccount ? 'bg-yellow-400' : 'bg-green-500'} mr-2`}></div>
+                <span className="text-sm text-gray-600 truncate">
+                  {getAccountId()}
+                  {usingDemoAccount && <span className="ml-1 text-xs text-yellow-600">(Demo)</span>}
+                </span>
+              </div>
+            )}
             <WalletConnection />
           </div>
         </div>

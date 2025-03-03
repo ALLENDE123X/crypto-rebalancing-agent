@@ -1,0 +1,1 @@
+self.__REACT_LOADABLE_MANIFEST="{\"pages/index.js -> near-api-js\":{\"id\":\"pages/index.js -> near-api-js\",\"files\":[]}}"

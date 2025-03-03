@@ -1,9 +1,9 @@
-import time
-import requests
 import json
-import random  # For simulated data
-from python_near_integration import store_sentiment_on_near, execute_trade
+import random
+import time
 from datetime import datetime, timedelta
+import boto3
+from python_near_integration import store_sentiment_on_near, execute_trade
 
 # Simulated Twitter data to avoid rate limits
 SIMULATED_TWEETS = {
@@ -27,158 +27,403 @@ SIMULATED_TWEETS = {
         {"text": "Solana NFT ecosystem is booming. Artists are moving from ETH to SOL in droves.", "weight": 1.8},
         {"text": "Just launched our dApp on Solana. The developer experience is amazing compared to ETH.", "weight": 1.7},
         {"text": "SOL tokenomics are concerning with so many tokens held by VCs. Be careful out there.", "weight": 1.4}
+    ],
+    "NEAR": [
+        {"text": "NEAR Protocol's sharding approach is superior to other L1s for scalability. Bullish! #NEAR", "weight": 2.3},
+        {"text": "The developer experience on NEAR is amazing. Their JavaScript SDK is best in class.", "weight": 1.9},
+        {"text": "NEAR's ecosystem is growing fast but still needs more killer apps to compete with ETH and SOL.", "weight": 1.5},
+        {"text": "Just moved all my assets to NEAR because of the low fees and fast transactions. Game changer!", "weight": 2.0},
+        {"text": "NEAR's tokenomics and community development fund make it a long-term winner in crypto.", "weight": 1.8}
     ]
 }
 
-# Configure CoinGecko API
-COINGECKO_API_KEY = "CG-dr4d5ck44cX2unRCv11kFjNc"
-COINGECKO_BASE_URL = "https://api.coingecko.com/api/v3"  # Removed 'pro-' to use free API
+# Configure DynamoDB for storing sentiment data
+dynamodb = boto3.resource('dynamodb')
+SENTIMENT_TABLE = "crypto_sentiment_data"
+TRADES_TABLE = "crypto_trades"
+PORTFOLIO_TABLE = "crypto_portfolio"
 
-# Map of crypto symbols to CoinGecko IDs
+# Map of crypto symbols to CoinGecko IDs (for future real API usage)
 CRYPTO_ID_MAP = {
     "BTC": "bitcoin",
     "ETH": "ethereum",
-    "SOL": "solana"
+    "SOL": "solana",
+    "NEAR": "near"
 }
 
-# Portfolio allocation settings
+# Portfolio allocation settings - this would be stored in DynamoDB in a real implementation
 portfolio = {
     "BTC": 5000,  # USD value
     "ETH": 3000,
-    "SOL": 2000
+    "NEAR": 2000,
+    "SOL": 1000
 }
+
 target_allocation = {
-    "BTC": 0.5,  # 50%
+    "BTC": 0.4,  # 40%
     "ETH": 0.3,  # 30%
-    "SOL": 0.2   # 20%
+    "NEAR": 0.2,  # 20%
+    "SOL": 0.1   # 10%
 }
 
-# Fetch Crypto Prices from CoinGecko
-def fetch_prices():
-    try:
-        # Get comma-separated list of coin IDs
-        coin_ids = ','.join([CRYPTO_ID_MAP[coin] for coin in portfolio.keys()])
-        
-        # Make API request to CoinGecko (free API)
-        url = f"{COINGECKO_BASE_URL}/simple/price"
-        params = {
-            'ids': coin_ids,
-            'vs_currencies': 'usd'
-            # Removed API key parameter for free API
-        }
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        data = response.json()
-        
-        # Convert response to our format
-        return {
-            symbol: data[coin_id]['usd']
-            for symbol, coin_id in CRYPTO_ID_MAP.items()
-        }
-    except Exception as e:
-        print(f"Error fetching prices from CoinGecko: {e}")
-        # Use fallback prices if API fails
-        return {
-            "BTC": 50000,
-            "ETH": 3000,
-            "SOL": 100
-        }
+# --- Sentiment Analysis Functions ---
 
-def fetch_sentiment_data(crypto):
-    """Get simulated Twitter data instead of using the API"""
-    try:
-        print(f"Getting simulated Twitter data for {crypto}...")
-        
-        # Get tweets for the specific crypto with some randomization
-        if crypto in SIMULATED_TWEETS:
-            # Randomly select 3-5 tweets from the collection for this run
-            num_tweets = random.randint(3, 5)
-            selected_tweets = random.sample(SIMULATED_TWEETS[crypto], num_tweets)
-            
-            # Add some randomness to the weights to simulate changing engagement
-            for tweet in selected_tweets:
-                # Vary the weight by ±20%
-                variation = random.uniform(0.8, 1.2)
-                tweet["weight"] = round(tweet["weight"] * variation, 2)
-            
-            # Format tweets for sentiment analysis
-            formatted_tweets = "\n".join([f"Tweet (engagement weight {t['weight']:.2f}): {t['text']}" for t in selected_tweets])
-            return formatted_tweets
-        else:
-            return f"No tweets found for {crypto}"
-        
-    except Exception as e:
-        print(f"Error with simulated Twitter data: {e}")
-        return f"Error simulating Twitter data for {crypto}"
-
-# Simple rule-based sentiment analyzer instead of using Gemini API
 def analyze_sentiment(crypto):
     """
-    Analyze sentiment using a simple rule-based approach instead of using Gemini API
+    Analyze sentiment for a specific cryptocurrency using simulated data.
+    In a real implementation, this would call a Twitter API and NLP service.
     """
     print(f"Analyzing sentiment for {crypto}...")
     
-    # Predefined sentiment scores with some randomness
-    base_sentiment = {
-        "BTC": 0.3,    # Slightly positive
-        "ETH": 0.5,    # Positive
-        "SOL": 0.0     # Neutral
-    }
-    
-    # Add some randomness (-0.3 to +0.3)
-    sentiment = base_sentiment.get(crypto, 0.0) + random.uniform(-0.3, 0.3)
-    
-    # Ensure it's between -1 and 1
-    sentiment = max(-1, min(1, sentiment))
-    
-    return round(sentiment, 2)
+    # In a real implementation, this would analyze real tweets
+    # For the hackathon, we'll use simulated data
+    if crypto in SIMULATED_TWEETS:
+        tweets = SIMULATED_TWEETS[crypto]
+        # Select a random subset of tweets to simulate variation
+        selected_tweets = random.sample(tweets, min(3, len(tweets)))
+        
+        # Calculate weighted sentiment
+        total_weight = sum(tweet["weight"] for tweet in selected_tweets)
+        sentiment_score = sum(
+            (0.5 + (random.random() * 0.5 - 0.25)) * tweet["weight"] 
+            for tweet in selected_tweets
+        ) / total_weight
+        
+        # Ensure score is between -1 and 1
+        sentiment_score = max(-1, min(1, sentiment_score))
+        
+        return round(sentiment_score, 2)
+    else:
+        # Default neutral sentiment if crypto not found
+        return 0.0
 
-# Calculate Rebalance
+def store_sentiment_data(crypto, score):
+    """Store sentiment data in DynamoDB"""
+    try:
+        table = dynamodb.Table(SENTIMENT_TABLE)
+        timestamp = datetime.now().isoformat()
+        
+        # Store current sentiment
+        table.put_item(Item={
+            'crypto': crypto,
+            'timestamp': timestamp,
+            'score': score,
+            'date': timestamp.split('T')[0]  # Extract date for easier querying
+        })
+        
+        print(f"Stored sentiment data for {crypto}: {score}")
+        return True
+    except Exception as e:
+        print(f"Error storing sentiment data: {e}")
+        return False
+
+def get_historical_sentiment(crypto, days=7):
+    """Get historical sentiment data from DynamoDB"""
+    try:
+        table = dynamodb.Table(SENTIMENT_TABLE)
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=days)
+        
+        # Query for sentiment data within date range
+        response = table.query(
+            KeyConditionExpression='crypto = :crypto AND timestamp BETWEEN :start AND :end',
+            ExpressionAttributeValues={
+                ':crypto': crypto,
+                ':start': start_date.isoformat(),
+                ':end': end_date.isoformat()
+            }
+        )
+        
+        # Format response for frontend
+        history = []
+        for item in response.get('Items', []):
+            history.append({
+                'date': item['date'],
+                'score': item['score']
+            })
+        
+        return history
+    except Exception as e:
+        print(f"Error retrieving historical sentiment: {e}")
+        return []
+
+# --- Portfolio Management Functions ---
+
+def calculate_current_allocation():
+    """Calculate current portfolio allocation percentages"""
+    total_value = sum(portfolio.values())
+    return {
+        crypto: value / total_value
+        for crypto, value in portfolio.items()
+    }
+
 def rebalance():
-    prices = fetch_prices()
+    """
+    Determine trades needed to rebalance portfolio based on target allocation
+    and sentiment scores.
     
-    # Skip rebalancing if we couldn't get prices
-    if None in prices.values():
-        print("Skipping rebalance due to missing price data")
-        return {}
-        
-    portfolio_value = sum(portfolio[coin] for coin in portfolio)
-    
+    Returns a dictionary of trades to execute {crypto: amount}
+    """
     trades = {}
-    for coin in portfolio:
-        target_value = portfolio_value * target_allocation[coin]
-        current_value = portfolio[coin] * prices[coin]
-        trade_amount = target_value - current_value
+    current_allocation = calculate_current_allocation()
+    total_value = sum(portfolio.values())
+    
+    for crypto, target_pct in target_allocation.items():
+        # Get sentiment to adjust target allocation
+        sentiment = analyze_sentiment(crypto)
         
-        if abs(trade_amount) > 50:  # Avoid small adjustments
-            trades[coin] = trade_amount / prices[coin]  # Convert USD to Crypto
+        # Adjust target allocation based on sentiment
+        # More positive sentiment = increase allocation
+        sentiment_factor = 1 + (sentiment * 0.2)  # Max 20% adjustment
+        adjusted_target = target_pct * sentiment_factor
         
+        # Calculate trade amount (positive = buy, negative = sell)
+        current_pct = current_allocation.get(crypto, 0)
+        pct_difference = adjusted_target - current_pct
+        
+        # Only trade if difference is significant
+        if abs(pct_difference) > 0.05:  # 5% threshold
+            trade_amount = pct_difference * total_value
+            trades[crypto] = trade_amount
+    
     return trades
 
-# Main autonomous agent function
-def autonomous_agent():
-    print("Fetching sentiment data...")
-    
-    for coin in portfolio.keys():
-        # Get sentiment and store on NEAR blockchain
-        sentiment = analyze_sentiment(coin)
-        print(f"Sentiment for {coin}: {sentiment}")
+def execute_trades(trades):
+    """Execute and record trades in DynamoDB"""
+    try:
+        table = dynamodb.Table(TRADES_TABLE)
+        timestamp = datetime.now().isoformat()
         
-        # Store sentiment on NEAR blockchain
-        store_sentiment_on_near(coin, sentiment)
-        
-    print("Calculating rebalancing...")
-    trades = rebalance()
+        for crypto, amount in trades.items():
+            trade_type = "buy" if amount > 0 else "sell"
+            sentiment = analyze_sentiment(crypto)
+            
+            # Record the trade
+            table.put_item(Item={
+                'crypto': crypto,
+                'timestamp': timestamp,
+                'amount': abs(amount),
+                'type': trade_type,
+                'sentiment': sentiment
+            })
+            
+            # Update portfolio (in a real implementation, this would interact with exchange APIs)
+            portfolio[crypto] = portfolio.get(crypto, 0) + amount
+            
+            print(f"Executed {trade_type} for {crypto}: {abs(amount):.2f} units")
+            
+            # Call NEAR integration (for blockchain recording)
+            execute_trade(crypto, abs(amount), sentiment)
     
-    # Execute trades based on sentiment and rebalancing needs
-    for coin, amount in trades.items():
-        print(f"Executing trade: {coin} -> {amount:.4f} units")
-        # Add sentiment data to trade execution
-        sentiment = analyze_sentiment(coin)
-        execute_trade(coin, amount, sentiment)
-    
-    # Sleep for a while before next cycle  
-    print("Cycle complete. Will run again in 1 hour.")
+    except Exception as e:
+        print(f"Error executing trades: {e}")
 
+def update_portfolio_data():
+    """Update portfolio data in DynamoDB"""
+    try:
+        table = dynamodb.Table(PORTFOLIO_TABLE)
+        timestamp = datetime.now().isoformat()
+        
+        # Calculate percentages
+        total_value = sum(portfolio.values())
+        percentages = {
+            crypto: (value / total_value) * 100
+            for crypto, value in portfolio.items()
+        }
+        
+        # Store portfolio data
+        table.put_item(Item={
+            'id': 'current_portfolio',
+            'timestamp': timestamp,
+            'assets': [
+                {'asset': crypto, 'value': value, 'percentage': percentages[crypto]}
+                for crypto, value in portfolio.items()
+            ],
+            'total_value': total_value
+        })
+        
+        print(f"Updated portfolio data in DynamoDB")
+    except Exception as e:
+        print(f"Error updating portfolio data: {e}")
+
+# --- API Endpoints for Frontend ---
+
+def get_all_sentiment_scores():
+    """Get current sentiment scores for all supported cryptocurrencies"""
+    result = []
+    for crypto in CRYPTO_ID_MAP.keys():
+        score = analyze_sentiment(crypto)
+        # Calculate a change value (would be real in production)
+        change = round(random.random() * 0.4 - 0.2, 2)
+        result.append({
+            'asset': crypto,
+            'score': score,
+            'change': change
+        })
+    return result
+
+def get_portfolio_data():
+    """Get current portfolio allocation data"""
+    # Calculate percentages
+    total_value = sum(portfolio.values())
+    
+    return {
+        'total_value': total_value,
+        'assets': [
+            {
+                'asset': crypto,
+                'value': value,
+                'percentage': (value / total_value) * 100
+            }
+            for crypto, value in portfolio.items()
+        ]
+    }
+
+def get_recent_trades(limit=5):
+    """Get recent trades from DynamoDB"""
+    try:
+        table = dynamodb.Table(TRADES_TABLE)
+        response = table.scan(Limit=limit)
+        
+        trades = []
+        for item in response.get('Items', []):
+            trades.append({
+                'asset': item['crypto'],
+                'timestamp': item['timestamp'],
+                'amount': item['amount'],
+                'type': item['type'],
+                'sentiment': item['sentiment']
+            })
+        
+        # Sort by timestamp descending
+        trades.sort(key=lambda x: x['timestamp'], reverse=True)
+        return trades[:limit]
+    except Exception as e:
+        print(f"Error getting recent trades: {e}")
+        # Return mock data if database error
+        return [
+            {
+                'asset': 'BTC',
+                'timestamp': (datetime.now() - timedelta(hours=5)).isoformat(),
+                'amount': 0.05,
+                'type': 'buy',
+                'sentiment': 0.78
+            },
+            {
+                'asset': 'SOL',
+                'timestamp': (datetime.now() - timedelta(hours=12)).isoformat(),
+                'amount': 12.5,
+                'type': 'sell',
+                'sentiment': -0.25
+            }
+        ]
+
+# --- Lambda Handler ---
+
+def lambda_handler(event, context):
+    """AWS Lambda handler function"""
+    try:
+        # Determine what action to perform based on the event
+        path = event.get('path', '')
+        http_method = event.get('httpMethod', 'GET')
+        
+        # API Gateway routes
+        if path.endswith('/sentiment'):
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'  # For CORS
+                },
+                'body': json.dumps(get_all_sentiment_scores())
+            }
+            
+        elif path.endswith('/sentiment/history'):
+            # Get query parameters
+            params = event.get('queryStringParameters', {}) or {}
+            crypto = params.get('crypto', 'BTC')
+            days = int(params.get('days', 7))
+            
+            # Get historical sentiment
+            history = get_historical_sentiment(crypto, days)
+            
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps(history)
+            }
+            
+        elif path.endswith('/portfolio'):
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps(get_portfolio_data())
+            }
+            
+        elif path.endswith('/trades'):
+            # Get query parameters
+            params = event.get('queryStringParameters', {}) or {}
+            limit = int(params.get('limit', 5))
+            
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps(get_recent_trades(limit))
+            }
+            
+        # Scheduled event for running sentiment analysis and rebalancing
+        elif event.get('detail-type') == 'Scheduled Event':
+            # Process sentiment for all supported cryptocurrencies
+            results = {}
+            for crypto in CRYPTO_ID_MAP.keys():
+                sentiment = analyze_sentiment(crypto)
+                store_sentiment_data(crypto, sentiment)
+                store_sentiment_on_near(crypto, sentiment)
+                results[crypto] = sentiment
+            
+            # Calculate rebalancing needs
+            trades = rebalance()
+            
+            # Execute trades if needed
+            if trades:
+                execute_trades(trades)
+            
+            # Update portfolio data
+            update_portfolio_data()
+            
+            return {
+                'statusCode': 200,
+                'body': json.dumps({
+                    'message': 'Sentiment analysis and rebalancing completed',
+                    'sentiments': results,
+                    'trades': {k: float(v) for k, v in trades.items()}
+                })
+            }
+        
+        # Default response
+        return {
+            'statusCode': 400,
+            'body': json.dumps({'error': 'Invalid endpoint'})
+        }
+        
+    except Exception as e:
+        print(f"Error in lambda_handler: {str(e)}")
+        return {
+            'statusCode': 500,
+            'body': json.dumps({'error': str(e)})
+        }
+
+# For local testing
 if __name__ == "__main__":
-    autonomous_agent()
+    # Simulate a scheduled event
+    event = {'detail-type': 'Scheduled Event'}
+    print(lambda_handler(event, None))
